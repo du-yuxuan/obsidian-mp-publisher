@@ -1,0 +1,57 @@
+name: 🎨 主题投稿 / Theme Submission
+description: 投稿自定义公众号主题 CSS
+labels: ["theme"]
+body:
+  - type: input
+    id: theme-name
+    attributes:
+      label: 主题名称
+      placeholder: "例如：my-awesome-theme"
+    validations:
+      required: true
+
+  - type: input
+    id: author
+    attributes:
+      label: 作者
+      placeholder: "你的名字或 GitHub ID"
+    validations:
+      required: true
+
+  - type: input
+    id: description
+    attributes:
+      label: 简短描述
+      placeholder: "一句话描述主题风格"
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 样式截图
+      description: 请提供至少一张使用该主题后的公众号预览截图
+      placeholder: "在此粘贴截图"
+    validations:
+      required: true
+
+  - type: textarea
+    id: css-content
+    attributes:
+      label: CSS 内容
+      description: 粘贴完整的主题 CSS 代码
+      render: css
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 自查清单
+      options:
+        - label: 所有选择器以 `.mp-content-section` 开头
+          required: true
+        - label: 没有使用 CSS 变量、@media、@font-face、伪元素、!important
+          required: true
+        - label: 已阅读 [CSS 主题开发指南](https://github.com/joeytoday/obsidian-mp-publisher/blob/main/CSS_THEME_GUIDE.md)
+          required: true

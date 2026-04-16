@@ -191,6 +191,11 @@ export class ThemeManagerView extends ItemView {
             cls: 'mp-tm-add-btn',
         });
 
+        const submitButton = sectionHeader.createEl('button', {
+            text: '📤 投稿主题',
+            cls: 'mp-tm-add-btn',
+        });
+
         const reloadButton = sectionHeader.createEl('button', {
             text: '重新加载',
             cls: 'mp-tm-refresh-btn',
@@ -219,6 +224,40 @@ export class ThemeManagerView extends ItemView {
             if (!editorSection.classList.contains('mp-tm-hidden')) {
                 this.renderCSSEditor(editorSection);
             }
+        });
+
+        submitButton.addEventListener('click', () => {
+            const title = encodeURIComponent('主题投稿：');
+            const body = encodeURIComponent(
+`## 主题信息
+
+- **主题名称**：
+- **作者**：
+- **简短描述**：
+
+## 样式截图
+
+> 请提供至少一张使用该主题后的公众号预览截图
+
+## CSS 内容
+
+<details>
+<summary>点击展开 CSS 代码</summary>
+
+\`\`\`css
+/* 在此粘贴你的主题 CSS */
+\`\`\`
+
+</details>
+
+## 自查清单
+
+- [ ] 所有选择器以 \`.mp-content-section\` 开头
+- [ ] 没有使用 CSS 变量、@media、@font-face、伪元素、!important
+- [ ] 已阅读 [CSS 主题开发指南](https://github.com/joeytoday/obsidian-mp-publisher/blob/main/CSS_THEME_GUIDE.md)
+`);
+            const issueUrl = `https://github.com/joeytoday/obsidian-mp-publisher/issues/new?labels=theme&title=${title}&body=${body}`;
+            window.open(issueUrl);
         });
 
         reloadButton.addEventListener('click', async () => {

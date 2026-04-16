@@ -1,4 +1,9 @@
-/* post 主题 - 自定义样式 */
+/**
+ * Theme: Colorful Style
+ * Author: joeytoday
+ * Source: https://github.com/joeytoday/obsidian-mp-publisher
+ * Description: 多彩风格主题，网格背景 + 彩色标题层级
+ */
 
 .mp-content-section {
   font-size: 16px;
