@@ -299,6 +299,23 @@ export class MPConverter {
 }
 
 /**
+ * 将代码高亮的 computed style 写入 inline style
+ * Obsidian 的代码高亮颜色通过 CSS class 产生，不在主题 CSS 文件中，
+ * juice 无法内联这些样式，需要在 DOM 挂载时读取 computed style 补全
+ */
+function applyCodeHighlightStyles(container: HTMLElement): void {
+    container.querySelectorAll('pre code').forEach(codeEl => {
+        const spans = codeEl.querySelectorAll('span');
+        spans.forEach(span => {
+            const computedColor = window.getComputedStyle(span).color;
+            if (computedColor) {
+                (span as HTMLElement).style.color = computedColor;
+            }
+        });
+    });
+}
+
+/**
  * 将 Markdown 转换为带主题样式的 HTML（用于发布）
  * 使用 juice 将 CSS 内联到 HTML 元素的 style 属性中
  */
@@ -340,6 +357,11 @@ export async function markdownToHtml(
 
         // 格式化内容（创建 section 容器、处理代码块等）
         MPConverter.formatContent(tempDiv);
+
+        // 将代码高亮的 computed style 写入 inline style
+        // Obsidian 的代码高亮颜色通过 CSS class 产生，不在主题 CSS 中，
+        // juice 无法内联，需要在 DOM 还挂载时读取 computed style 补全
+        applyCodeHighlightStyles(tempDiv);
 
         // 移除定位样式
         tempDiv.removeAttribute('style');

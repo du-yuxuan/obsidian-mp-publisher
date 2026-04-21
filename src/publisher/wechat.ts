@@ -340,6 +340,45 @@ export class WechatPublisher {
             }
         });
     }
+
+    /**
+     * 将代码块中的换行符转为 <br> 标签
+     * 微信公众号 API 会吃掉 <code> 中的 \n 换行符，导致代码不换行
+     * 复制到剪贴板时浏览器会保留换行，所以此处理仅用于发布流程
+     */
+    private convertCodeBlockNewlines(html: string): string {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        tempDiv.querySelectorAll('pre code').forEach(codeEl => {
+            // 递归遍历所有文本节点，将 \n 替换为 <br>
+            const walker = document.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
+            const textNodes: Text[] = [];
+            let node: Text | null;
+            while ((node = walker.nextNode() as Text | null)) {
+                textNodes.push(node);
+            }
+
+            for (const textNode of textNodes) {
+                const text = textNode.textContent || '';
+                if (!text.includes('\n')) continue;
+
+                const parts = text.split('\n');
+                const fragment = document.createDocumentFragment();
+                parts.forEach((part, index) => {
+                    if (index > 0) {
+                        fragment.appendChild(document.createElement('br'));
+                    }
+                    if (part) {
+                        fragment.appendChild(document.createTextNode(part));
+                    }
+                });
+                textNode.parentNode?.replaceChild(fragment, textNode);
+            }
+        });
+
+        return tempDiv.innerHTML;
+    }
     // 处理单个图片的辅助函数
     async processImage(
         imagePath: string,
@@ -487,6 +526,9 @@ export class WechatPublisher {
 
             // 注意：不再调用 cleanHtmlForWechat，因为传入的 content 已经是
             // 通过 CopyManager.getInlinedHtml 生成的干净 HTML（已内联样式、已清理属性）
+
+            // 将代码块中的换行符转为 <br>，防止微信 API 吃掉 \n
+            processedContent = this.convertCodeBlockNewlines(processedContent);
 
             // 获取元数据
             const metadata = getOrCreateMetadata(this.plugin, file);
