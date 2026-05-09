@@ -1,4 +1,4 @@
-import { Notice } from 'obsidian';
+import { Notice, requestUrl } from 'obsidian';
 
 export class CopyManager {
     /**
@@ -109,8 +109,12 @@ export class CopyManager {
 
         for (const img of imageArray) {
             try {
-                const response = await fetch(img.src);
-                const blob = await response.blob();
+                if (!img.src || img.src.startsWith('data:')) continue;
+
+                const response = await requestUrl({ url: img.src });
+                if (response.status !== 200) continue;
+
+                const blob = new Blob([response.arrayBuffer]);
                 const reader = new FileReader();
                 await new Promise((resolve, reject) => {
                     reader.onload = () => {
