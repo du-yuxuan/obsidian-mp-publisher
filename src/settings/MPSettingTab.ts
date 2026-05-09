@@ -1,4 +1,5 @@
-import { App, PluginSettingTab, Setting, Notice, TFile } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
+import { VIEW_TYPE_GUIDE } from '../guideView';
 import MPPlugin from '../main';
 
 export class MPSettingTab extends PluginSettingTab {
@@ -23,12 +24,14 @@ export class MPSettingTab extends PluginSettingTab {
             .addButton(btn => btn
                 .setButtonText('使用指南')
                 .onClick(async () => {
-                    const guidePath = this.plugin.manifest.dir + '/GUIDE.md';
-                    const file = this.app.vault.getAbstractFileByPath(guidePath);
-                    if (file instanceof TFile) {
-                        await this.app.workspace.getLeaf(true).openFile(file);
-                    } else {
-                        new Notice('未找到使用指南文件');
+                    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_GUIDE);
+                    if (leaves.length > 0) {
+                        this.app.workspace.revealLeaf(leaves[0]);
+                        return;
+                    }
+                    const leaf = this.app.workspace.getLeaf(true);
+                    if (leaf) {
+                        await leaf.setViewState({ type: VIEW_TYPE_GUIDE, active: true });
                     }
                 }));
 

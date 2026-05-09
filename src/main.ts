@@ -4,6 +4,7 @@ import { ThemeManager } from './themeManager';
 import { ThemeManagerView, VIEW_TYPE_THEME_MANAGER } from './themeManagerView';
 import { ThemePreviewView, VIEW_TYPE_THEME_PREVIEW } from './themePreviewView';
 import { ThemeCSSView, VIEW_TYPE_THEME_CSS } from './themeCSSView';
+import { GuideView, VIEW_TYPE_GUIDE } from './guideView';
 import { SettingsManager } from './settings/settings';
 import { MPConverter } from './converter';
 import { DonateManager } from './donateManager';
@@ -73,6 +74,12 @@ export default class MPPublisherPlugin extends Plugin {
     this.registerView(
       VIEW_TYPE_THEME_CSS,
       (leaf) => new ThemeCSSView(leaf, this.themeManager),
+    );
+
+    // 注册使用指南视图
+    this.registerView(
+      VIEW_TYPE_GUIDE,
+      (leaf) => new GuideView(leaf, this.manifest.dir ?? ''),
     );
 
     // 添加功能按钮
