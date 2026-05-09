@@ -8,7 +8,7 @@
 
 打开一篇 Markdown 笔记，通过左侧边栏的发送图标（或命令面板搜索 `MP Publisher`）打开预览面板。右侧会实时显示公众号排版效果，点击「复制到公众号」，粘贴到微信编辑器就行。
 
-https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
+<video src="https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac"  controls></video>
 
 ### 主题切换
 
@@ -16,7 +16,8 @@ https://github.com/user-attachments/assets/b62e82a0-9b3c-4406-8007-1bbb6b9b7bac
 
 想更精细地管理主题，在设置页点击「打开主题管理」，或者命令面板搜索「打开主题管理」。
 
-https://github.com/user-attachments/assets/78e8df0e-ea0d-4902-bcb5-dd384e19fefe
+<video src="https://github.com/user-attachments/assets/78e8df0e-ea0d-4902-bcb5-dd384e19fefe"  controls></video>
+
 
 ### 主题管理
 
@@ -38,7 +39,7 @@ https://github.com/user-attachments/assets/78e8df0e-ea0d-4902-bcb5-dd384e19fefe
 
 如果配置了微信公众号的 AppID 和 AppSecret，可以直接从 Obsidian 发布草稿到公众号后台，不用手动复制粘贴。
 
-https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95
+<video src="https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95"  controls></video>
 
 ### 数学公式
 
