@@ -1550,6 +1550,47 @@ ol {
     height: 15px;
 }
 
+/* ---- 使用说明 ---- */
+
+.mp-tm-guide {
+    margin-bottom: 16px;
+    padding: 0 12px;
+}
+
+.mp-tm-guide summary {
+    font-size: 0.78em;
+    color: var(--text-faint);
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 0;
+    outline: none;
+}
+
+.mp-tm-guide summary:hover {
+    color: var(--text-muted);
+}
+
+.mp-tm-guide-content {
+    padding: 8px 0 4px;
+    font-size: 0.78em;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.mp-tm-guide-content p {
+    margin: 0 0 6px;
+}
+
+.mp-tm-guide-content ul {
+    margin: 0;
+    padding-left: 16px;
+    list-style: none;
+}
+
+.mp-tm-guide-content li {
+    margin-bottom: 2px;
+}
+
 /* ---- 卡片操作 ---- */
 
 .mp-tm-card-actions {
@@ -1557,16 +1598,17 @@ ol {
     align-items: center;
     gap: 2px;
     flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 0.15s ease;
 }
 
-.mp-tm-theme-card:hover .mp-tm-card-actions {
-    opacity: 1;
-}
+/* ---- 快速切换复选框 ---- */
 
-.mp-tm-card-active .mp-tm-card-actions {
-    opacity: 1;
+.mp-tm-quick-checkbox {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--interactive-accent);
+    flex-shrink: 0;
 }
 
 /* ---- 按钮系统 ---- */

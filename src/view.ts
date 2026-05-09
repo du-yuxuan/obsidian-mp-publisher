@@ -575,18 +575,19 @@ export class MPView extends ItemView {
         return container;
     }
 
-    /** 获取主题选项（本地自定义主题排在内置主题之前） */
+    /** 获取主题选项（仅显示快速切换中可见的主题，按来源分组） */
     private getThemeOptions(): { value: string; label: string }[] {
         const allThemes = this.themeManager.getVisibleThemes();
         if (allThemes.length === 0) {
             return [{ value: 'default', label: '默认主题' }];
         }
 
-        // 本地主题排在前面，内置主题排在后面
-        const localThemes = allThemes.filter(t => t.source === 'local');
+        // 按来源分组：内置 → 社区投稿 → 本地自定义 → 其他
         const builtinThemes = allThemes.filter(t => t.source === 'builtin');
-        const otherThemes = allThemes.filter(t => t.source !== 'local' && t.source !== 'builtin');
-        const sortedThemes = [...localThemes, ...builtinThemes, ...otherThemes];
+        const communityThemes = allThemes.filter(t => t.source === 'community');
+        const localThemes = allThemes.filter(t => t.source === 'local');
+        const otherThemes = allThemes.filter(t => !['builtin', 'community', 'local'].includes(t.source));
+        const sortedThemes = [...builtinThemes, ...communityThemes, ...localThemes, ...otherThemes];
 
         return sortedThemes.map(theme => ({ value: theme.id, label: theme.name }));
     }

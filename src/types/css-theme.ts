@@ -5,9 +5,10 @@
 
 /** 主题来源类型 */
 export enum ThemeSource {
-    BUILTIN = 'builtin',   // 内置主题
-    REMOTE = 'remote',     // 云端主题（GitHub）
-    LOCAL = 'local',       // 本地自定义主题
+    BUILTIN = 'builtin',     // 内置主题
+    COMMUNITY = 'community', // 社区投稿主题
+    REMOTE = 'remote',       // 云端主题（GitHub）
+    LOCAL = 'local',         // 本地自定义主题
 }
 
 /** CSS 主题定义 */
@@ -28,6 +29,8 @@ export interface CSSTheme {
     localPath?: string;
     /** 作者 */
     author?: string;
+    /** 作者主页 URL */
+    authorUrl?: string;
     /** 是否可见 */
     isVisible: boolean;
 }

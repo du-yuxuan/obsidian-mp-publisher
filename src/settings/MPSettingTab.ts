@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice, TFile } from 'obsidian';
 import MPPlugin from '../main';
 
 export class MPSettingTab extends PluginSettingTab {
@@ -15,6 +15,22 @@ export class MPSettingTab extends PluginSettingTab {
         containerEl.addClass('mp-settings');
 
         containerEl.createEl('h2', { text: 'MP Publisher 设置' });
+
+        // 使用指南入口
+        new Setting(containerEl)
+            .setName('使用指南')
+            .setDesc('查看插件的功能介绍和使用说明')
+            .addButton(btn => btn
+                .setButtonText('使用指南')
+                .onClick(async () => {
+                    const guidePath = this.plugin.manifest.dir + '/GUIDE.md';
+                    const file = this.app.vault.getAbstractFileByPath(guidePath);
+                    if (file instanceof TFile) {
+                        await this.app.workspace.getLeaf(true).openFile(file);
+                    } else {
+                        new Notice('未找到使用指南文件');
+                    }
+                }));
 
         // 主题管理入口
         new Setting(containerEl)

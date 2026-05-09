@@ -48,11 +48,24 @@ export class ThemeManagerView extends ItemView {
     private async renderContent(): Promise<void> {
         this.contentEl.empty();
 
-        // 内置主题区域
-        this.renderBuiltinSection();
+        // 使用说明（可折叠）
+        this.renderGuide();
 
-        // 本地自定义主题区域
+        // 自定义主题 → 社区投稿 → 内置
         this.renderLocalSection();
+        this.renderCommunitySection();
+        this.renderBuiltinSection();
+    }
+
+    private renderGuide(): void {
+        const details = this.contentEl.createEl('details', { cls: 'mp-tm-guide' });
+        details.createEl('summary', { text: '使用说明' });
+        const content = details.createEl('div', { cls: 'mp-tm-guide-content' });
+        content.createEl('p', { text: '点击主题卡片切换当前使用的主题。' });
+        const list = content.createEl('ul');
+        list.createEl('li', { text: '☑ 勾选框 — 控制该主题是否出现在预览界面的快速切换下拉列表中' });
+        list.createEl('li', { text: '👁 预览 — 在侧边栏中预览该主题的效果' });
+        list.createEl('li', { text: '</> 代码 — 查看或编辑主题的 CSS 源码' });
     }
 
     // ==================== 内置主题 ====================
@@ -66,6 +79,23 @@ export class ThemeManagerView extends ItemView {
         const grid = section.createEl('div', { cls: 'mp-tm-theme-grid' });
 
         for (const theme of builtinThemes) {
+            this.renderThemeCard(grid, theme, false);
+        }
+    }
+
+    // ==================== 社区投稿主题 ====================
+
+    private renderCommunitySection(): void {
+        const communityThemes = this.themeManager.getThemesBySource(ThemeSource.COMMUNITY);
+        if (communityThemes.length === 0) return;
+
+        const section = this.contentEl.createEl('div', { cls: 'mp-tm-section' });
+        const sectionHeader = section.createEl('div', { cls: 'mp-tm-section-header' });
+        sectionHeader.createEl('h3', { text: '社区投稿' });
+
+        const grid = section.createEl('div', { cls: 'mp-tm-theme-grid' });
+
+        for (const theme of communityThemes) {
             this.renderThemeCard(grid, theme, false);
         }
     }
@@ -391,7 +421,20 @@ export class ThemeManagerView extends ItemView {
         nameRow.createEl('span', { text: theme.name, cls: 'mp-tm-card-name' });
 
         if (theme.author) {
-            nameRow.createEl('span', { text: theme.author, cls: 'mp-tm-card-author' });
+            if (theme.authorUrl) {
+                const authorLink = nameRow.createEl('a', {
+                    text: theme.author,
+                    cls: 'mp-tm-card-author',
+                    href: theme.authorUrl,
+                });
+                authorLink.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    window.open(theme.authorUrl, '_blank');
+                    event.preventDefault();
+                });
+            } else {
+                nameRow.createEl('span', { text: theme.author, cls: 'mp-tm-card-author' });
+            }
         }
 
         if (theme.description) {
@@ -400,6 +443,19 @@ export class ThemeManagerView extends ItemView {
 
         // 次要操作（hover 时显示）
         const actions = card.createEl('div', { cls: 'mp-tm-card-actions' });
+
+        // 快速切换复选框（预览按钮左边）
+        const isQuickSwitchVisible = this.themeManager.isThemeQuickSwitchVisible(theme.id);
+        const checkbox = actions.createEl('input', {
+            type: 'checkbox',
+            cls: 'mp-tm-quick-checkbox',
+            attr: { 'aria-label': '加入快速切换' },
+        }) as HTMLInputElement;
+        checkbox.checked = isQuickSwitchVisible;
+        checkbox.addEventListener('click', (event) => event.stopPropagation());
+        checkbox.addEventListener('change', async () => {
+            await this.themeManager.setThemeQuickSwitchVisible(theme.id, checkbox.checked);
+        });
 
         const previewButton = actions.createEl('button', {
             cls: 'mp-tm-icon-btn',

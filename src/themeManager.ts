@@ -1,6 +1,6 @@
 import { App, Notice, requestUrl } from 'obsidian';
 import { CSSTheme, ThemeSource, ThemeSettings, FontOption, DEFAULT_FONTS, RemoteThemeIndex, REMOTE_THEME_CONFIG } from './types/css-theme';
-import { builtinThemes } from './themes';
+import { builtinThemes, communityThemes } from './themes';
 
 /**
  * CSS 主题管理器
@@ -24,12 +24,21 @@ export class ThemeManager {
 
     /** 初始化：加载所有主题 */
     async initialize(): Promise<void> {
+        const hiddenIds = this.getHiddenThemeIds();
+
         // 1. 加载内置主题
         for (const theme of builtinThemes) {
+            theme.isVisible = !hiddenIds.includes(theme.id);
             this.themes.set(theme.id, theme);
         }
 
-        // 2. 加载已下载的云端主题（从设置中恢复）
+        // 2. 加载社区投稿主题
+        for (const theme of communityThemes) {
+            theme.isVisible = !hiddenIds.includes(theme.id);
+            this.themes.set(theme.id, theme);
+        }
+
+        // 3. 加载已下载的云端主题（从设置中恢复）
         const settings = this.getThemeSettings();
         if (settings.downloadedRemoteThemes) {
             for (const theme of settings.downloadedRemoteThemes) {
@@ -191,6 +200,7 @@ export class ThemeManager {
     /** 加载本地自定义 CSS 主题 */
     async loadLocalThemes(): Promise<void> {
         const customDir = this.getCustomThemeDir();
+        const hiddenIds = this.getHiddenThemeIds();
 
         // 先移除已有的本地主题，避免重复
         for (const [id, theme] of this.themes.entries()) {
@@ -225,7 +235,7 @@ export class ThemeManager {
                         source: ThemeSource.LOCAL,
                         css: cssContent,
                         localPath: filePath,
-                        isVisible: true,
+                        isVisible: !hiddenIds.includes(themeId),
                     };
 
                     this.themes.set(themeId, theme);
@@ -236,6 +246,38 @@ export class ThemeManager {
         } catch (error) {
             console.error('加载本地主题失败:', error);
         }
+    }
+
+    // ==================== 主题快速切换显隐 ====================
+
+    /** 获取隐藏主题 ID 列表 */
+    private getHiddenThemeIds(): string[] {
+        return this.plugin.settingsManager.getSettings().hiddenThemeIds || [];
+    }
+
+    /** 设置主题在快速切换中的显隐状态 */
+    async setThemeQuickSwitchVisible(themeId: string, visible: boolean): Promise<void> {
+        const hiddenIds = [...this.getHiddenThemeIds()];
+        const index = hiddenIds.indexOf(themeId);
+
+        if (visible && index >= 0) {
+            hiddenIds.splice(index, 1);
+        } else if (!visible && index < 0) {
+            hiddenIds.push(themeId);
+        }
+
+        await this.plugin.settingsManager.updateSettings({ hiddenThemeIds: hiddenIds });
+
+        // 同步内存中的 isVisible 状态
+        const theme = this.themes.get(themeId);
+        if (theme) {
+            theme.isVisible = visible;
+        }
+    }
+
+    /** 检查主题是否在快速切换中可见 */
+    isThemeQuickSwitchVisible(themeId: string): boolean {
+        return !this.getHiddenThemeIds().includes(themeId);
     }
 
     /** 保存本地自定义主题 */
