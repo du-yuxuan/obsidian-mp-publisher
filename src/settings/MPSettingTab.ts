@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
-import { VIEW_TYPE_GUIDE } from '../guideView';
+import { VIEW_TYPE_GUIDE, VIEW_TYPE_CHANGELOG } from '../guideView';
 import MPPlugin from '../main';
 
 export class MPSettingTab extends PluginSettingTab {
@@ -17,22 +17,19 @@ export class MPSettingTab extends PluginSettingTab {
 
         containerEl.createEl('h2', { text: 'MP Publisher 设置' });
 
-        // 使用指南入口
+        // 使用指南 & 查看更新
         new Setting(containerEl)
-            .setName('使用指南')
-            .setDesc('查看插件的功能介绍和使用说明')
+            .setName('帮助')
+            .setDesc('查看插件功能介绍或版本更新记录')
             .addButton(btn => btn
                 .setButtonText('使用指南')
                 .onClick(async () => {
-                    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_GUIDE);
-                    if (leaves.length > 0) {
-                        this.app.workspace.revealLeaf(leaves[0]);
-                        return;
-                    }
-                    const leaf = this.app.workspace.getLeaf(true);
-                    if (leaf) {
-                        await leaf.setViewState({ type: VIEW_TYPE_GUIDE, active: true });
-                    }
+                    await this.openDocView(VIEW_TYPE_GUIDE);
+                }))
+            .addButton(btn => btn
+                .setButtonText('查看更新')
+                .onClick(async () => {
+                    await this.openDocView(VIEW_TYPE_CHANGELOG);
                 }));
 
         // 主题管理入口
@@ -103,5 +100,17 @@ export class MPSettingTab extends PluginSettingTab {
                         convertMathToSVG: value,
                     });
                 }));
+    }
+
+    private async openDocView(viewType: string): Promise<void> {
+        const leaves = this.app.workspace.getLeavesOfType(viewType);
+        if (leaves.length > 0) {
+            this.app.workspace.revealLeaf(leaves[0]);
+            return;
+        }
+        const leaf = this.app.workspace.getLeaf(true);
+        if (leaf) {
+            await leaf.setViewState({ type: viewType, active: true });
+        }
     }
 }

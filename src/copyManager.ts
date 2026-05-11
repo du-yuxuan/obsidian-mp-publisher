@@ -111,10 +111,21 @@ export class CopyManager {
             try {
                 if (!img.src || img.src.startsWith('data:')) continue;
 
-                const response = await requestUrl({ url: img.src });
-                if (response.status !== 200) continue;
+                let blob: Blob;
+                const isHttpUrl = img.src.startsWith('http://') || img.src.startsWith('https://');
 
-                const blob = new Blob([response.arrayBuffer]);
+                if (isHttpUrl) {
+                    // 外部 HTTP 图片：使用 requestUrl 绕过 Electron CORS 限制
+                    const response = await requestUrl({ url: img.src });
+                    if (response.status !== 200) continue;
+                    const contentType = response.headers['content-type'] || 'image/png';
+                    blob = new Blob([response.arrayBuffer], { type: contentType });
+                } else {
+                    // 本地图片（app:// 等协议）：使用 fetch，Electron 环境原生支持
+                    const response = await fetch(img.src);
+                    blob = await response.blob();
+                }
+
                 const reader = new FileReader();
                 await new Promise((resolve, reject) => {
                     reader.onload = () => {
