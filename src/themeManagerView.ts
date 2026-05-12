@@ -5,6 +5,7 @@ import { ThemeSource, CSSTheme, RemoteThemeIndex } from './types/css-theme';
 import { ConfirmModal } from './settings/ConfirmModal';
 import { ThemePreviewView, VIEW_TYPE_THEME_PREVIEW } from './themePreviewView';
 import { ThemeCSSView, VIEW_TYPE_THEME_CSS } from './themeCSSView';
+import type MPPublisherPlugin from './main';
 
 export const VIEW_TYPE_THEME_MANAGER = 'mp-theme-manager';
 
@@ -15,9 +16,9 @@ export const VIEW_TYPE_THEME_MANAGER = 'mp-theme-manager';
 export class ThemeManagerView extends ItemView {
     private themeManager: ThemeManager;
     private settingsManager: SettingsManager;
-    private plugin: any;
+    private plugin: MPPublisherPlugin;
 
-    constructor(leaf: WorkspaceLeaf, themeManager: ThemeManager, settingsManager: SettingsManager, plugin: any) {
+    constructor(leaf: WorkspaceLeaf, themeManager: ThemeManager, settingsManager: SettingsManager, plugin: MPPublisherPlugin) {
         super(leaf);
         this.themeManager = themeManager;
         this.settingsManager = settingsManager;
@@ -42,10 +43,11 @@ export class ThemeManagerView extends ItemView {
         container.classList.add('mp-theme-manager');
 
         this.contentEl = container.createEl('div', { cls: 'mp-theme-manager-content' });
-        await this.renderContent();
+        this.renderContent();
+        await Promise.resolve();
     }
 
-    private async renderContent(): Promise<void> {
+    private renderContent(): void {
         this.contentEl.empty();
 
         // 使用说明（可折叠）
@@ -506,7 +508,7 @@ export class ThemeManagerView extends ItemView {
     /** 在右侧窗口中打开主题预览（复用已有窗口） */
     private async openThemePreview(theme: CSSTheme): Promise<void> {
         const existingLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_THEME_PREVIEW);
-        let leaf: any;
+        let leaf: WorkspaceLeaf;
 
         if (existingLeaves.length > 0) {
             leaf = existingLeaves[0];
@@ -529,7 +531,7 @@ export class ThemeManagerView extends ItemView {
     /** 在新窗口中打开 CSS 代码查看（复用已有窗口） */
     private async openThemeCSS(theme: CSSTheme): Promise<void> {
         const existingLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_THEME_CSS);
-        let leaf: any;
+        let leaf: WorkspaceLeaf;
 
         if (existingLeaves.length > 0) {
             leaf = existingLeaves[0];
@@ -551,5 +553,6 @@ export class ThemeManagerView extends ItemView {
 
     async onClose(): Promise<void> {
         this.contentEl?.empty();
+        await Promise.resolve();
     }
 }

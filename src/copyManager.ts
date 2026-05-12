@@ -121,7 +121,8 @@ export class CopyManager {
                     const contentType = response.headers['content-type'] || 'image/png';
                     blob = new Blob([response.arrayBuffer], { type: contentType });
                 } else {
-                    // 本地图片（app:// 等协议）：使用 fetch，Electron 环境原生支持
+                    // 本地图片（app:// 等协议）：Electron 环境原生支持，requestUrl 不支持 app:// 协议
+                    // eslint-disable-next-line no-restricted-globals
                     const response = await fetch(img.src);
                     blob = await response.blob();
                 }

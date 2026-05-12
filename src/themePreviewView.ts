@@ -82,7 +82,8 @@ export class ThemePreviewView extends ItemView {
         container.empty();
         container.classList.add('mp-theme-preview-container');
 
-        // 更新标签页标题
+        // Obsidian 内部 API，无公开类型定义
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (this.leaf as any).updateHeader?.();
 
         await this.renderPreview(container);
@@ -120,10 +121,7 @@ export class ThemePreviewView extends ItemView {
         if (section && this.themeId) {
             const theme = this.themeManager.getTheme(this.themeId);
             if (theme) {
-                const styleElement = document.createElement('style');
-                styleElement.setAttribute('data-mp-theme', theme.id);
-                styleElement.textContent = theme.css;
-                section.insertBefore(styleElement, section.firstChild);
+                this.themeManager.applyTheme(section, theme, 'theme-preview');
             }
         }
     }
@@ -134,5 +132,6 @@ export class ThemePreviewView extends ItemView {
             this.renderComponent = null;
         }
         this.containerEl.children[1]?.empty();
+        await Promise.resolve();
     }
 }

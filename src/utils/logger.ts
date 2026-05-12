@@ -29,13 +29,13 @@ export class Logger {
 
     public debug(...args: any[]): void {
         if (this.debugMode) {
-            console.log('[DEBUG]', ...args);
+            console.debug('[DEBUG]', ...args);
         }
     }
 
     public info(...args: any[]): void {
         if (this.debugMode) {
-            console.log('[INFO]', ...args);
+            console.debug('[INFO]', ...args);
         }
     }
 

@@ -1,6 +1,7 @@
 import { App, Notice, requestUrl } from 'obsidian';
 import { CSSTheme, ThemeSource, ThemeSettings, FontOption, DEFAULT_FONTS, RemoteThemeIndex, REMOTE_THEME_CONFIG } from './types/css-theme';
 import { builtinThemes, communityThemes } from './themes';
+import type { MPSettings } from './settings/settings';
 
 /**
  * CSS 主题管理器
@@ -8,14 +9,14 @@ import { builtinThemes, communityThemes } from './themes';
  */
 export class ThemeManager {
     private app: App;
-    private plugin: any;
+    private plugin: { settingsManager: { getSettings(): MPSettings; updateSettings(updates: Partial<MPSettings>): Promise<void> }; manifest: { dir?: string } };
     private themes: Map<string, CSSTheme> = new Map();
     private activeTheme: CSSTheme | null = null;
     private currentFont: string;
     private currentFontSize: number;
     private injectedStyleElement: HTMLStyleElement | null = null;
 
-    constructor(app: App, plugin: any) {
+    constructor(app: App, plugin: { settingsManager: { getSettings(): MPSettings; updateSettings(updates: Partial<MPSettings>): Promise<void> }; manifest: { dir?: string } }) {
         this.app = app;
         this.plugin = plugin;
         this.currentFont = DEFAULT_FONTS[0].value;
@@ -142,7 +143,7 @@ export class ThemeManager {
      * 将当前主题的 CSS 应用到预览元素
      * 通过注入 <style> 标签实现
      */
-    applyTheme(element: HTMLElement, theme?: CSSTheme): void {
+    applyTheme(element: HTMLElement, theme?: CSSTheme, scopeId?: string): void {
         const targetTheme = theme || this.activeTheme;
         if (!targetTheme) return;
 
@@ -152,15 +153,27 @@ export class ThemeManager {
             existingStyle.remove();
         }
 
+        // 设置作用域属性，防止不同视图间样式泄露
+        if (scopeId) {
+            element.setAttribute('data-mp-scope', scopeId);
+        }
+
         // 构建最终 CSS：主题 CSS + 字体/字号覆盖
-        const fontOverrideCSS = this.buildFontOverrideCSS();
-        const finalCSS = targetTheme.css + '\n' + fontOverrideCSS;
+        const fontOverrideCSS = this.buildFontOverrideCSS(scopeId);
+        const scopedThemeCSS = scopeId ? this.scopeCSS(targetTheme.css, scopeId) : targetTheme.css;
+        const finalCSS = scopedThemeCSS + '\n' + fontOverrideCSS;
 
         // 注入新的样式标签
         const styleElement = document.createElement('style');
         styleElement.setAttribute('data-mp-theme', targetTheme.id);
         styleElement.textContent = finalCSS;
         element.insertBefore(styleElement, element.firstChild);
+    }
+
+    /** 给 CSS 选择器加上作用域前缀，防止跨视图污染 */
+    private scopeCSS(css: string, scopeId: string): string {
+        const scopeAttr = `[data-mp-scope="${scopeId}"]`;
+        return css.replace(/\.mp-content-section/g, `.mp-content-section${scopeAttr}`);
     }
 
     /**
@@ -172,18 +185,19 @@ export class ThemeManager {
     }
 
     /** 构建字体/字号覆盖 CSS */
-    private buildFontOverrideCSS(): string {
+    private buildFontOverrideCSS(scopeId?: string): string {
+        const scopeAttr = scopeId ? `[data-mp-scope="${scopeId}"]` : '';
         return `
 /* 字体/字号覆盖 */
-.mp-content-section {
+.mp-content-section${scopeAttr} {
     font-family: ${this.currentFont} !important;
     font-size: ${this.currentFontSize}px !important;
 }
-.mp-content-section p,
-.mp-content-section li,
-.mp-content-section blockquote,
-.mp-content-section th,
-.mp-content-section td {
+.mp-content-section${scopeAttr} p,
+.mp-content-section${scopeAttr} li,
+.mp-content-section${scopeAttr} blockquote,
+.mp-content-section${scopeAttr} th,
+.mp-content-section${scopeAttr} td {
     font-family: ${this.currentFont} !important;
     font-size: ${this.currentFontSize}px !important;
 }

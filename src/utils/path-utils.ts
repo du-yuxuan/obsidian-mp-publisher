@@ -1,5 +1,3 @@
-import { TFile } from 'obsidian';
-
 export type FilePathLike = {
     basename: string;
     parent: { path: string } | null;

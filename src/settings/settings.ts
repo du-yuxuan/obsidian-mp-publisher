@@ -42,10 +42,12 @@ const DEFAULT_SETTINGS: MPSettings = {
 };
 
 export class SettingsManager {
-    private plugin: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private plugin: { loadData(): Promise<any>; saveData(data: MPSettings): Promise<void> };
     private settings: MPSettings;
 
-    constructor(plugin: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor(plugin: { loadData(): Promise<any>; saveData(data: MPSettings): Promise<void> }) {
         this.plugin = plugin;
         this.settings = { ...DEFAULT_SETTINGS };
     }

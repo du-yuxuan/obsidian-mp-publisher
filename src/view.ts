@@ -1,9 +1,9 @@
 import { ItemView, WorkspaceLeaf, MarkdownRenderer, TFile, setIcon, MarkdownView } from 'obsidian';
 import { MPConverter, markdownToHtml } from './converter';
 import { CopyManager } from './copyManager';
-import { DonateManager } from './donateManager';
 import type { SettingsManager } from './settings/settings';
 import type { ThemeManager } from './themeManager';
+import type MPPublisherPlugin from './main';
 
 export const VIEW_TYPE_MP = 'mp-preview';
 
@@ -18,13 +18,13 @@ export class MPView extends ItemView {
     private customThemeSelect: HTMLElement;
     private customFontSelect: HTMLElement;
     private fontSizeSelect: HTMLInputElement;
-    private plugin: any;
+    private plugin: MPPublisherPlugin;
 
     constructor(
         leaf: WorkspaceLeaf,
         themeManager: ThemeManager,
         settingsManager: SettingsManager,
-        plugin: any,
+        plugin: MPPublisherPlugin,
     ) {
         super(leaf);
         this.themeManager = themeManager;
@@ -72,8 +72,8 @@ export class MPView extends ItemView {
         this.customThemeSelect.id = 'template-select';
 
         // 主题选择器事件
-        this.customThemeSelect.querySelector('.custom-select')?.addEventListener('change', async (e: any) => {
-            const value = e.detail.value;
+        this.customThemeSelect.querySelector('.custom-select')?.addEventListener('change', async (e: Event) => {
+            const value = (e as CustomEvent).detail.value;
             this.themeManager.setActiveTheme(value);
             await this.settingsManager.updateSettings({ activeThemeId: value });
             this.applyCurrentTheme();
@@ -88,8 +88,8 @@ export class MPView extends ItemView {
         this.customFontSelect.id = 'font-select';
 
         // 字体选择器事件
-        this.customFontSelect.querySelector('.custom-select')?.addEventListener('change', async (e: any) => {
-            const value = e.detail.value;
+        this.customFontSelect.querySelector('.custom-select')?.addEventListener('change', async (e: Event) => {
+            const value = (e as CustomEvent).detail.value;
             this.themeManager.setFont(value);
             await this.settingsManager.updateSettings({ fontFamily: value });
             this.applyCurrentTheme();
@@ -295,7 +295,7 @@ export class MPView extends ItemView {
     private applyCurrentTheme(): void {
         const section = this.previewEl.querySelector('.mp-content-section') as HTMLElement;
         if (section) {
-            this.themeManager.applyTheme(section);
+            this.themeManager.applyTheme(section, undefined, 'mp-view');
         }
     }
 
@@ -473,7 +473,7 @@ export class MPView extends ItemView {
         }
     }
 
-    async onFileModify(file: TFile) {
+    onFileModify(file: TFile): void {
         if (file === this.currentFile) {
             if (this.updateTimer) {
                 clearTimeout(this.updateTimer);
@@ -509,7 +509,7 @@ export class MPView extends ItemView {
         // 使用新的 CSS 主题系统：注入 <style> 标签
         const section = this.previewEl.querySelector('.mp-content-section') as HTMLElement;
         if (section) {
-            this.themeManager.applyTheme(section);
+            this.themeManager.applyTheme(section, undefined, 'mp-view');
         }
 
         // 根据滚动位置决定是否自动滚动

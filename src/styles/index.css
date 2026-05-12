@@ -3,6 +3,60 @@
 @import url('./settings/settings.css');
 @import url('./theme-manager.css');
 
+/* 进度指示器 */
+.mp-progress-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 280px;
+}
+
+.mp-progress-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.mp-progress-bar-container {
+    height: 6px;
+    background: var(--background-modifier-border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.mp-progress-bar {
+    height: 100%;
+    width: var(--progress-width, 0%);
+    background: var(--interactive-accent);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.mp-progress-bar.success {
+    background: #07c160;
+}
+
+.mp-progress-status {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.mp-progress-status.success {
+    color: #07c160;
+}
+
+.mp-progress-warning {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 6px;
+}
+
 /* 发布按钮样式 */
 .mp-publish-button {
     background-color: #07c160;

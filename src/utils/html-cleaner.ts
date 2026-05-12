@@ -1,6 +1,3 @@
-import { Logger } from './logger';
-import { App } from 'obsidian';
-
 /**
  * 清理HTML内容，移除Obsidian特有的UI元素
  * 这个函数可以在预览和发布时共享使用

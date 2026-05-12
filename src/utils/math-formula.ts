@@ -93,7 +93,7 @@ export async function convertMathToSVG(htmlContent: string, markdown: string): P
 
         try {
             // 使用在线 API 渲染公式为图片
-            const imgHtml = await renderFormulaWithApi(formula.tex, formula.isBlock);
+            const imgHtml = renderFormulaWithApi(formula.tex, formula.isBlock);
             if (imgHtml) {
                 const placeholder = doc.createElement('span');
                 placeholder.innerHTML = imgHtml;
@@ -132,7 +132,7 @@ function extractFormulas(markdown: string): Array<{ tex: string; isBlock: boolea
 /**
  * 使用在线 API 渲染公式为图片
  */
-async function renderFormulaWithApi(tex: string, isBlock: boolean): Promise<string | null> {
+function renderFormulaWithApi(tex: string, isBlock: boolean): string | null {
     try {
         // 使用 CodeCogs API 渲染公式，直接使用在线图片链接
         const encodedTex = encodeURIComponent(tex);

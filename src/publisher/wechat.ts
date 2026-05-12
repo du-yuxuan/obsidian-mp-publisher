@@ -12,12 +12,6 @@ interface WechatMaterial {
     update_time: string;
 }
 
-// 封面图缓存接口
-interface CoverImageCache {
-    materials: WechatMaterial[];
-    lastUpdate: number;
-}
-
 // 访问令牌缓存接口
 interface TokenCache {
     token: string;
@@ -68,7 +62,7 @@ export class WechatPublisher {
                 totalCount: totalCount,
                 lastUpdate: Date.now()
             };
-            localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+            this.app.saveLocalStorage(cacheKey, JSON.stringify(cacheData));
 
             return { items, totalCount };
         } catch (error) {
@@ -89,7 +83,7 @@ export class WechatPublisher {
 
             if (mediaId) {
                 // 获取现有的上传图片缓存
-                const uploadedImagesCache = localStorage.getItem('wechat_uploaded_images_cache');
+                const uploadedImagesCache = this.app.loadLocalStorage('wechat_uploaded_images_cache');
                 const uploadedImages = uploadedImagesCache ? JSON.parse(uploadedImagesCache) : {};
 
                 // 添加新上传的图片
@@ -100,7 +94,7 @@ export class WechatPublisher {
                 };
 
                 // 更新缓存
-                localStorage.setItem('wechat_uploaded_images_cache', JSON.stringify(uploadedImages));
+                this.app.saveLocalStorage('wechat_uploaded_images_cache', JSON.stringify(uploadedImages));
             }
 
             return mediaId;
@@ -116,7 +110,7 @@ export class WechatPublisher {
         // 1. 检查缓存
         if (!forceRefresh) {
             try {
-                const cacheData = localStorage.getItem('wechat_token_cache');
+                const cacheData = this.app.loadLocalStorage('wechat_token_cache');
                 const cache: TokenCache = cacheData ? JSON.parse(cacheData) : null;
 
                 // 如果缓存存在且未过期（有效期为110分钟，微信令牌有效期为2小时）
@@ -192,7 +186,7 @@ export class WechatPublisher {
                     token: accessToken,
                     expireTime: expireTime
                 };
-                localStorage.setItem('wechat_token_cache', JSON.stringify(newCache));
+                this.app.saveLocalStorage('wechat_token_cache', JSON.stringify(newCache));
 
                 return accessToken;
             } catch (error: any) {

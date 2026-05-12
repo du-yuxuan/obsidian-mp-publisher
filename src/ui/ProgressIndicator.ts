@@ -1,4 +1,4 @@
-import { App, Plugin } from 'obsidian';
+import { App } from 'obsidian';
 import { Logger } from '../utils/logger';
 
 /**
@@ -45,7 +45,7 @@ export class ProgressIndicator {
         // 进度条
         this.progressBar = document.createElement('div');
         this.progressBar.className = 'mp-progress-bar';
-        this.progressBar.style.width = '0%';
+        this.progressBar.setCssProps({ '--progress-width': '0%' });
         progressContainer.appendChild(this.progressBar);
 
         this.container.appendChild(progressContainer);
@@ -59,7 +59,11 @@ export class ProgressIndicator {
         // 警告提示
         const warningEl = document.createElement('div');
         warningEl.className = 'mp-progress-warning';
-        warningEl.innerHTML = '<span class="warning-icon">⚠️</span> 请勿关闭此页面';
+        const warningIcon = document.createElement('span');
+        warningIcon.className = 'warning-icon';
+        warningIcon.textContent = '⚠️';
+        warningEl.appendChild(warningIcon);
+        warningEl.appendText(' 请勿关闭此页面');
         this.container.appendChild(warningEl);
 
         // 添加到页面
@@ -82,7 +86,7 @@ export class ProgressIndicator {
         }
 
         const percentage = Math.min(100, Math.round((currentStep / totalSteps) * 100));
-        this.progressBar.style.width = `${percentage}%`;
+        this.progressBar.setCssProps({ '--progress-width': `${percentage}%` });
 
         if (statusText) {
             this.statusText.textContent = statusText;
@@ -134,7 +138,7 @@ export class ProgressIndicator {
             return;
         }
 
-        this.progressBar.style.width = '100%';
+        this.progressBar.setCssProps({ '--progress-width': '100%' });
         this.progressBar.classList.add('success');
         this.statusText.textContent = message;
         this.statusText.classList.add('success');

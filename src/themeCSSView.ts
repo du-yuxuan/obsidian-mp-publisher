@@ -50,6 +50,8 @@ export class ThemeCSSView extends ItemView {
         container.classList.add('mp-theme-css-container');
         this.renderCSS(container);
 
+        // Obsidian 内部 API，无公开类型定义
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (this.leaf as any).updateHeader?.();
     }
 
@@ -59,6 +61,7 @@ export class ThemeCSSView extends ItemView {
         container.classList.add('mp-theme-css-container');
 
         this.renderCSS(container);
+        await Promise.resolve();
     }
 
     private renderCSS(container: HTMLElement): void {
@@ -290,5 +293,6 @@ export class ThemeCSSView extends ItemView {
 
     async onClose(): Promise<void> {
         this.containerEl.children[1]?.empty();
+        await Promise.resolve();
     }
 }

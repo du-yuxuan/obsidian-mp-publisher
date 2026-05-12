@@ -1,4 +1,4 @@
-import { Plugin, Notice, TFile, MarkdownView } from 'obsidian';
+import { Plugin, Notice, TFile, MarkdownView, MarkdownFileInfo } from 'obsidian';
 import { MPView, VIEW_TYPE_MP } from './view';
 import { ThemeManager } from './themeManager';
 import { ThemeManagerView, VIEW_TYPE_THEME_MANAGER } from './themeManagerView';
@@ -95,7 +95,7 @@ export default class MPPublisherPlugin extends Plugin {
 
     // 添加打开预览命令
     this.addCommand({
-      id: 'open-mp-publisher',
+      id: 'open-preview',
       name: '打开公众号发布插件',
       callback: async () => {
         await this.activateView();
@@ -104,7 +104,7 @@ export default class MPPublisherPlugin extends Plugin {
 
     // 添加打开主题管理命令
     this.addCommand({
-      id: 'open-theme-manager',
+      id: 'theme-manager',
       name: '打开主题管理',
       callback: async () => {
         await this.activateThemeManager();
@@ -113,13 +113,15 @@ export default class MPPublisherPlugin extends Plugin {
 
     // 添加发布命令
     this.addCommand({
-      id: 'publish-to-wechat',
+      id: 'publish',
       name: '发布到微信公众号',
-      editorCheckCallback: (checking: boolean, editor: any, view: MarkdownView) => {
+      editorCheckCallback: (checking: boolean, _editor, ctx: MarkdownView | MarkdownFileInfo) => {
         if (checking) {
           return true;
         }
-        showPublishModal.call(this, view);
+        if (ctx instanceof MarkdownView) {
+          showPublishModal.call(this, ctx);
+        }
         return true;
       },
     });

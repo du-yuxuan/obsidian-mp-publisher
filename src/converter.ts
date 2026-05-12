@@ -333,6 +333,9 @@ export async function markdownToHtml(
     tempDiv.style.width = '1000px';
     document.body.appendChild(tempDiv);
 
+    const renderComponent = new Component();
+    renderComponent.load();
+
     try {
         // 预处理 Markdown，转换 LaTeX 语法
         const processedMarkdown = preprocessMathFormula(markdown);
@@ -343,7 +346,7 @@ export async function markdownToHtml(
             processedMarkdown,
             tempDiv,
             sourcePath,
-            new Component(),
+            renderComponent,
         );
 
         // 等待异步渲染完成（MathJax、Mermaid 等）
@@ -407,6 +410,7 @@ export async function markdownToHtml(
 
         return htmlContent;
     } finally {
+        renderComponent.unload();
         if (tempDiv.parentNode) {
             document.body.removeChild(tempDiv);
         }

@@ -55,7 +55,9 @@ export class MarkdownDocView extends ItemView {
         try {
             const filePath = this.pluginDir + '/' + this.config.fileName;
             const content = await this.app.vault.adapter.read(filePath);
-            await MarkdownRenderer.render(this.app, content, container as HTMLElement, '', new Component());
+            const renderComponent = new Component();
+            renderComponent.load();
+            await MarkdownRenderer.render(this.app, content, container as HTMLElement, '', renderComponent);
         } catch {
             container.createEl('p', { text: '无法加载文件', cls: 'mp-guide-error' });
         }

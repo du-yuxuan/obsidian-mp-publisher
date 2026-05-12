@@ -1,7 +1,6 @@
 import { App, MarkdownView, Modal, Notice, Setting, TFile } from 'obsidian';
 import MPPlugin from '../main';
 import { markdownToHtml } from '../converter';
-import { WechatPublisher } from '../publisher/wechat';
 
 // 封面图选择模态框
 export class CoverImageModal extends Modal {
@@ -143,7 +142,7 @@ export class CoverImageModal extends Modal {
 					img.src = material.url;
 
 					// 添加素材名称
-					const nameEl = materialItem.createEl('div', {
+					materialItem.createEl('div', {
 						text: material.name || '未命名素材',
 						cls: 'material-item-name'
 					});
