@@ -39,6 +39,12 @@
 
 如果配置了微信公众号的 AppID 和 AppSecret，可以直接从 Obsidian 发布草稿到公众号后台，不用手动复制粘贴。
 
+配置步骤：
+1. 登录[微信公众平台](https://mp.weixin.qq.com/) → 设置与开发 → 基本配置
+2. 记录 AppID 和 AppSecret
+3. 设置 IP 白名单：填入你当前的 IP 地址。家用宽带 IP 经常变？直接填 `0.0.0.0/0` 允许所有 IP，省去频繁更新的麻烦
+4. 在插件设置中添加公众号，填入 AppID 和 AppSecret 即可
+
 <video src="https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95"  controls></video>
 
 ### 数学公式

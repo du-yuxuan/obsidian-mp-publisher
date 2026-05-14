@@ -72,7 +72,8 @@ https://github.com/user-attachments/assets/24288345-b5c8-4613-956b-78b622317d95
    - 登录 [微信公众平台](https://mp.weixin.qq.com/)
    - 进入"设置与开发" > "基本配置"
    - 记录你的 `AppID` 和 `AppSecret`
-   - 在 `APP IP 白名单`中输入你的本地 ip 地址，不知道的可以问问 AI
+   - 在 `IP 白名单`中输入你的本地 IP 地址（不知道的可以问问 AI）
+   - 💡 家用宽带 IP 经常变动？可以设置为 `0.0.0.0/0` 允许所有 IP，省去频繁更新的麻烦
 
 2. **在插件中配置**
    - 打开 Obsidian 设置
