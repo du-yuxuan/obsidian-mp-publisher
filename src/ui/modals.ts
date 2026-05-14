@@ -1,17 +1,18 @@
 import { App, MarkdownView, Modal, Notice, Setting, TFile } from 'obsidian';
 import MPPlugin from '../main';
 import { markdownToHtml } from '../converter';
-
 // 封面图选择模态框
 export class CoverImageModal extends Modal {
 	plugin: MPPlugin;
 	selectedMediaId: string = '';
 	onImageSelected: (mediaId: string) => void;
+	accountId?: string;
 
-	constructor(app: App, plugin: MPPlugin, onImageSelected: (mediaId: string) => void) {
+	constructor(app: App, plugin: MPPlugin, onImageSelected: (mediaId: string) => void, accountId?: string) {
 		super(app);
 		this.plugin = plugin;
 		this.onImageSelected = onImageSelected;
+		this.accountId = accountId;
 	}
 
 	async onOpen() {
@@ -112,7 +113,7 @@ export class CoverImageModal extends Modal {
 				loadingEl.classList.add('content-visible');
 				loadingEl.classList.remove('content-hidden');
 
-				const materials = await this.plugin.wechatPublisher.getWechatMaterials(page, pageSize);
+				const materials = await this.plugin.wechatPublisher.getWechatMaterials(page, pageSize, this.accountId);
 
 				if (materials.items.length === 0 && page === 0) {
 					materialGrid.createEl('div', { text: '没有找到素材，请上传新图片' });
@@ -296,7 +297,8 @@ export class CoverImageModal extends Modal {
 			try {
 				const mediaId = await this.plugin.wechatPublisher.uploadImageToWechat(
 					selectedFileData,
-					fileInfo.name
+					fileInfo.name,
+					this.accountId
 				);
 
 				if (!mediaId) {
@@ -354,6 +356,7 @@ export class PublishModal extends Modal {
 	markdownView: MarkdownView;
 	titleInput: HTMLInputElement;
 	platformSelect: HTMLSelectElement;
+	accountSelect: HTMLSelectElement;
 	coverImagePreview: HTMLElement;
 	selectedCoverMediaId: string = '';
 
@@ -390,7 +393,7 @@ export class PublishModal extends Modal {
 		// 平台选择
 		const platformSetting = new Setting(contentEl)
 			.setName('平台')
-			.setDesc('选择发布平台');
+			.setDesc('目前只支持微信公众号');
 
 		this.platformSelect = document.createElement('select');
 		this.platformSelect.className = 'enhanced-publisher-platform-selector';
@@ -400,9 +403,38 @@ export class PublishModal extends Modal {
 		wechatOption.text = '微信公众号';
 		this.platformSelect.appendChild(wechatOption);
 
-		// 未来可以添加更多平台选项
-
 		platformSetting.controlEl.appendChild(this.platformSelect);
+
+		// 公众号账号选择
+		const accounts = this.plugin.settingsManager.getSettings().wechatAccounts;
+		const activeAccountId = this.plugin.settingsManager.getSettings().activeWechatAccountId;
+
+		const accountSetting = new Setting(contentEl)
+			.setName('公众号')
+			.setDesc('选择要发布到的公众号');
+
+		this.accountSelect = document.createElement('select');
+		this.accountSelect.className = 'enhanced-publisher-platform-selector';
+
+		if (accounts.length === 0) {
+			const emptyOption = document.createElement('option');
+			emptyOption.value = '';
+			emptyOption.text = '请先在设置中添加公众号';
+			this.accountSelect.appendChild(emptyOption);
+			this.accountSelect.disabled = true;
+		} else {
+			for (const account of accounts) {
+				const option = document.createElement('option');
+				option.value = account.id;
+				option.text = account.name || `公众号 (${account.appId.slice(0, 6)}...)`;
+				if (account.id === activeAccountId) {
+					option.selected = true;
+				}
+				this.accountSelect.appendChild(option);
+			}
+		}
+
+		accountSetting.controlEl.appendChild(this.accountSelect);
 
 		// 添加草稿复选框
 		const draftSetting = new Setting(contentEl)
@@ -435,6 +467,7 @@ export class PublishModal extends Modal {
 		selectCoverButton.textContent = '选择封面图';
 		selectCoverButton.addEventListener('click', () => {
 			// 打开封面图选择模态框
+			const selectedAccountId = this.accountSelect.value;
 			const coverImageModal = new CoverImageModal(this.app, this.plugin, (mediaId) => {
 				this.selectedCoverMediaId = mediaId;
 
@@ -456,7 +489,7 @@ export class PublishModal extends Modal {
 				} else {
 					this.coverImagePreview.textContent = '已选择封面图';
 				}
-			});
+			}, selectedAccountId);
 			coverImageModal.open();
 		});
 
@@ -506,8 +539,12 @@ export class PublishModal extends Modal {
 			);
 
 			if (platform === 'wechat') {
-				if (!this.plugin.settings.wechatAppId || !this.plugin.settings.wechatAppSecret) {
-					new Notice('请先在设置中配置微信公众号的AppID和AppSecret');
+				// 获取选中的公众号账号
+				const selectedAccountId = this.accountSelect.value;
+				const selectedAccount = this.plugin.settingsManager.getWechatAccountById(selectedAccountId);
+
+				if (!selectedAccount || !selectedAccount.appId || !selectedAccount.appSecret) {
+					new Notice('请先在设置中配置公众号的 AppID 和 AppSecret');
 					return;
 				}
 
@@ -536,7 +573,8 @@ export class PublishModal extends Modal {
 						title,
 						htmlContent,
 						this.selectedCoverMediaId,
-						this.markdownView.file
+						this.markdownView.file,
+						selectedAccountId
 					);
 
 					if (success) {

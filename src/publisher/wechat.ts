@@ -32,7 +32,8 @@ export class WechatPublisher {
     // 获取微信素材库列表（支持分页）
     async getWechatMaterials(
         page: number = 0,
-        pageSize: number = 20
+        pageSize: number = 20,
+        accountId?: string
     ): Promise<{ items: WechatMaterial[], totalCount: number }> {
         try {
             const materialsResponse = await this.requestWithTokenRetry(async (token) => {
@@ -45,7 +46,7 @@ export class WechatPublisher {
                         count: pageSize
                     })
                 });
-            });
+            }, accountId);
 
             if (materialsResponse.json.errcode && materialsResponse.json.errcode !== 0) {
                 this.handleWechatError(materialsResponse.json);
@@ -73,9 +74,9 @@ export class WechatPublisher {
     }
 
     // 上传图片到微信公众号（使用uploadimg接口）
-    async uploadImageToWechat(imageData: ArrayBuffer, fileName: string): Promise<string> {
+    async uploadImageToWechat(imageData: ArrayBuffer, fileName: string, accountId?: string): Promise<string> {
         try {
-            const result = await this.uploadImageAndGetUrl(imageData, fileName);
+            const result = await this.uploadImageAndGetUrl(imageData, fileName, accountId);
 
             if (!result) return '';
 
@@ -105,12 +106,29 @@ export class WechatPublisher {
         }
     }
 
+    // 获取当前使用的 appId 和 appSecret（支持指定账号）
+    private getCredentials(accountId?: string): { appId: string; appSecret: string } {
+        if (accountId) {
+            const account = this.plugin.settingsManager.getWechatAccountById(accountId);
+            if (account) {
+                return { appId: account.appId.trim(), appSecret: account.appSecret.trim() };
+            }
+        }
+        // 回退到旧的全局配置
+        return {
+            appId: this.plugin.settings.wechatAppId.trim(),
+            appSecret: this.plugin.settings.wechatAppSecret.trim(),
+        };
+    }
+
     // 获取访问令牌（带缓存）
-    async getAccessToken(forceRefresh: boolean = false): Promise<string> {
+    async getAccessToken(forceRefresh: boolean = false, accountId?: string): Promise<string> {
+        const cacheKey = accountId ? `wechat_token_cache_${accountId}` : 'wechat_token_cache';
+
         // 1. 检查缓存
         if (!forceRefresh) {
             try {
-                const cacheData = this.app.loadLocalStorage('wechat_token_cache');
+                const cacheData = this.app.loadLocalStorage(cacheKey);
                 const cache: TokenCache = cacheData ? JSON.parse(cacheData) : null;
 
                 // 如果缓存存在且未过期（有效期为110分钟，微信令牌有效期为2小时）
@@ -138,13 +156,14 @@ export class WechatPublisher {
                 this.logger.debug(`开始获取微信访问令牌${forceRefresh ? ' (强制刷新)' : ''}`);
 
                 // 使用 stable_token 接口 (POST)
+                const credentials = this.getCredentials(accountId);
                 const tokenResponse = await requestUrl({
                     url: 'https://api.weixin.qq.com/cgi-bin/stable_token',
                     method: 'POST',
                     body: JSON.stringify({
                         grant_type: 'client_credential',
-                        appid: this.plugin.settings.wechatAppId,
-                        secret: this.plugin.settings.wechatAppSecret,
+                        appid: credentials.appId,
+                        secret: credentials.appSecret,
                         force_refresh: forceRefresh
                     }),
                     headers: {
@@ -186,7 +205,7 @@ export class WechatPublisher {
                     token: accessToken,
                     expireTime: expireTime
                 };
-                this.app.saveLocalStorage('wechat_token_cache', JSON.stringify(newCache));
+                this.app.saveLocalStorage(cacheKey, JSON.stringify(newCache));
 
                 return accessToken;
             } catch (error: any) {
@@ -210,7 +229,8 @@ export class WechatPublisher {
     // 上传单个图片到微信公众号并获取URL
     async uploadImageAndGetUrl(
         imageData: ArrayBuffer,
-        fileName: string
+        fileName: string,
+        accountId?: string
     ): Promise<{ url: string; media_id: string } | null> {
         try {
             const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substring(2);
@@ -238,7 +258,7 @@ export class WechatPublisher {
                     },
                     body: combinedBuffer.buffer
                 });
-            });
+            }, accountId);
 
             this.logger.debug(`response: ${JSON.stringify(response)}`);
 
@@ -265,7 +285,8 @@ export class WechatPublisher {
     async processDocumentImages(
         content: string,
         file: TFile,
-        onProgress?: (current: number, total: number, imageName?: string) => void
+        onProgress?: (current: number, total: number, imageName?: string) => void,
+        accountId?: string
     ): Promise<string> {
         try {
             if (!file.parent) {
@@ -300,7 +321,7 @@ export class WechatPublisher {
                 }
 
                 // 处理图片并获取微信 URL (现在也处理 http 图片以供自动上传)
-                const imageUrl = await this.processImage(src, file, metadata);
+                const imageUrl = await this.processImage(src, file, metadata, accountId);
                 if (!imageUrl) continue;
 
                 // 更新图片 src 为微信 URL
@@ -378,6 +399,7 @@ export class WechatPublisher {
         imagePath: string,
         file: TFile,
         metadata: any,
+        accountId?: string,
     ): Promise<string | null> {
         try {
             // 1. 处理 Base64 Data URL (通常是公式转换生成的)
@@ -398,7 +420,7 @@ export class WechatPublisher {
                 const arrayBuffer = bytes.buffer;
 
                 this.logger.debug(`上传生成的图片: ${fileName}`);
-                const uploadResult = await this.uploadImageAndGetUrl(arrayBuffer, fileName);
+                const uploadResult = await this.uploadImageAndGetUrl(arrayBuffer, fileName, accountId);
                 return uploadResult ? uploadResult.url : null;
             }
 
@@ -416,7 +438,7 @@ export class WechatPublisher {
                         }
 
                         const fileName = imagePath.split('/').pop()?.split('?')[0] || `web_image_${Date.now()}.png`;
-                        const uploadResult = await this.uploadImageAndGetUrl(response.arrayBuffer, fileName);
+                        const uploadResult = await this.uploadImageAndGetUrl(response.arrayBuffer, fileName, accountId);
 
                         if (!uploadResult) return null;
 
@@ -461,7 +483,7 @@ export class WechatPublisher {
                 const arrayBuffer = await this.plugin.app.vault.readBinary(linkedFile);
 
                 // 上传图片到微信
-                const uploadResult = await this.uploadImageAndGetUrl(arrayBuffer, fileName);
+                const uploadResult = await this.uploadImageAndGetUrl(arrayBuffer, fileName, accountId);
 
                 if (!uploadResult) return null;
 
@@ -488,7 +510,8 @@ export class WechatPublisher {
         title: string,
         content: string,
         thumb_media_id: string,
-        file: TFile
+        file: TFile,
+        accountId?: string
     ): Promise<boolean> {
         try {
             // 获取进度指示器
@@ -515,7 +538,8 @@ export class WechatPublisher {
                         totalSteps, 
                         `正在上传图片 ${current + 1}/${total}: ${imageName || ''}`.trim()
                     );
-                }
+                },
+                accountId
             );
 
             // 注意：不再调用 cleanHtmlForWechat，因为传入的 content 已经是
@@ -578,7 +602,7 @@ export class WechatPublisher {
                         })
                     });
                 }
-            });
+            }, accountId);
 
             this.logger.debug(`response: ${JSON.stringify(response)}`);
 
@@ -605,7 +629,7 @@ export class WechatPublisher {
                             }]
                         })
                     });
-                });
+                }, accountId);
                 this.logger.debug(`retry response: ${JSON.stringify(response)}`);
             }
 
@@ -643,7 +667,7 @@ export class WechatPublisher {
     }
 
     // 辅助方法：执行带重试的请求
-    private async requestWithTokenRetry(requestFn: (token: string) => Promise<any>): Promise<any> {
+    private async requestWithTokenRetry(requestFn: (token: string) => Promise<any>, accountId?: string): Promise<any> {
         const maxRetries = 2;
         const initialDelay = 1000;
 
@@ -655,7 +679,7 @@ export class WechatPublisher {
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
 
-                const accessToken = await this.getAccessToken();
+                const accessToken = await this.getAccessToken(false, accountId);
                 if (!accessToken) throw new Error("无法获取 Access Token，请检查：1. AppID 和 AppSecret 是否正确；2. 当前 IP 是否已添加到微信公众平台白名单（设置与开发 → 基本配置 → IP 白名单）");
 
                 let response = await requestFn(accessToken);
@@ -663,7 +687,7 @@ export class WechatPublisher {
                 // 处理 Token 失效
                 if (response.json && [40001, 40014, 42001].includes(response.json.errcode)) {
                     this.logger.warn(`Token失效 (${response.json.errcode})，尝试刷新并重试...`);
-                    const newToken = await this.getAccessToken(true);
+                    const newToken = await this.getAccessToken(true, accountId);
                     if (newToken) {
                         response = await requestFn(newToken);
                     }

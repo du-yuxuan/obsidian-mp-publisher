@@ -227,9 +227,9 @@ export class ThemeCSSView extends ItemView {
             }
 
             // 注释行
-            if (line.trimStart().startsWith('/*') || line.trimStart().startsWith('*')) {
-                const commentSpan = codeEl.createEl('span', { cls: 'css-hl-comment', text: line });
-                void commentSpan;
+            const trimmedLine = line.replace(/^\s+/, '');
+            if (trimmedLine.startsWith('/*') || trimmedLine.startsWith('*')) {
+                codeEl.createEl('span', { cls: 'css-hl-comment', text: line });
                 continue;
             }
 

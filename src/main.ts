@@ -14,10 +14,10 @@ import { showPublishModal } from './publisher';
 import { Logger } from './utils/logger';
 
 export default class MPPublisherPlugin extends Plugin {
-  settingsManager: SettingsManager;
-  themeManager: ThemeManager;
-  wechatPublisher: WechatPublisher;
-  logger: Logger;
+  settingsManager!: SettingsManager;
+  themeManager!: ThemeManager;
+  wechatPublisher!: WechatPublisher;
+  logger!: Logger;
   showPublishModal = showPublishModal;
 
   // 为了兼容性，添加 settings getter
@@ -169,8 +169,8 @@ export default class MPPublisherPlugin extends Plugin {
   }
 
   // 包装微信发布功能供UI调用
-  async publishToWechat(title: string, content: string, thumbMediaId: string = '', file: TFile): Promise<boolean> {
-    return this.wechatPublisher.publishToWechat(title, content, thumbMediaId, file);
+  async publishToWechat(title: string, content: string, thumbMediaId: string = '', file: TFile, accountId?: string): Promise<boolean> {
+    return this.wechatPublisher.publishToWechat(title, content, thumbMediaId, file, accountId);
   }
 
   onunload() {

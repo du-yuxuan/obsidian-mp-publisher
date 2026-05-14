@@ -1,6 +1,8 @@
 import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import { VIEW_TYPE_GUIDE, VIEW_TYPE_CHANGELOG } from '../guideView';
 import MPPlugin from '../main';
+import { WechatAccount } from './settings';
+import { nanoid } from '../utils/nanoid';
 
 export class MPSettingTab extends PluginSettingTab {
     plugin: MPPlugin;
@@ -15,68 +17,78 @@ export class MPSettingTab extends PluginSettingTab {
         containerEl.empty();
         containerEl.addClass('mp-settings');
 
-        containerEl.createEl('h2', { text: 'MP Publisher 设置' });
-
-        // 使用指南 & 查看更新
+        // ── 使用指南 ──────────────────────────────────
         new Setting(containerEl)
-            .setName('帮助')
-            .setDesc('查看插件功能介绍或版本更新记录')
+            .setName('使用指南')
             .addButton(btn => btn
                 .setButtonText('使用指南')
                 .onClick(async () => {
                     await this.openDocView(VIEW_TYPE_GUIDE);
                 }))
             .addButton(btn => btn
-                .setButtonText('查看更新')
+                .setButtonText('更新日志')
                 .onClick(async () => {
                     await this.openDocView(VIEW_TYPE_CHANGELOG);
                 }));
 
-        // 主题管理入口
+        // ── 主题与外观 ──────────────────────────────────
+
         new Setting(containerEl)
             .setName('主题管理')
-            .setDesc('管理内置主题、云端主题和本地自定义 CSS 主题')
             .addButton(btn => btn
-                .setButtonText('打开主题管理')
-                .setCta()
+                .setButtonText('打开')
                 .onClick(() => {
-                    // 通过插件方法打开主题管理界面
                     this.plugin.activateThemeManager();
                 }));
 
-        // 微信公众号配置
-        containerEl.createEl('h3', { text: '微信公众号配置' });
+        // ── 公众号 ──────────────────────────────────
 
-        // AppID 设置
+        const accounts = this.plugin.settingsManager.getSettings().wechatAccounts;
+
+        for (const account of accounts) {
+            this.renderAccountCard(containerEl, account);
+        }
+
+        if (accounts.length < 3) {
+            new Setting(containerEl)
+                .addButton(btn => btn
+                    .setButtonText('添加公众号')
+                    .setCta()
+                    .onClick(async () => {
+                        const newAccount: WechatAccount = {
+                            id: nanoid(),
+                            name: '',
+                            appId: '',
+                            appSecret: '',
+                        };
+                        const updatedAccounts = [...accounts, newAccount];
+                        const updates: Partial<ReturnType<typeof this.plugin.settingsManager.getSettings>> = {
+                            wechatAccounts: updatedAccounts,
+                        };
+                        if (updatedAccounts.length === 1) {
+                            updates.activeWechatAccountId = newAccount.id;
+                        }
+                        await this.plugin.settingsManager.updateSettings(updates);
+                        this.display();
+                    }));
+        }
+
+        // ── 发布设置 ──────────────────────────────────
+
         new Setting(containerEl)
-            .setName('AppID')
-            .setDesc('微信公众号的 AppID')
-            .addText(text => text
-                .setPlaceholder('输入 AppID')
-                .setValue(this.plugin.settingsManager.getSettings().wechatAppId || '')
+            .setName('数学公式转 SVG')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settingsManager.getSettings().convertMathToSVG)
                 .onChange(async (value) => {
                     await this.plugin.settingsManager.updateSettings({
-                        wechatAppId: value,
+                        convertMathToSVG: value,
                     });
                 }));
 
-        // AppSecret 设置
-        new Setting(containerEl)
-            .setName('AppSecret')
-            .setDesc('微信公众号的 AppSecret')
-            .addText(text => text
-                .setPlaceholder('输入 AppSecret')
-                .setValue(this.plugin.settingsManager.getSettings().wechatAppSecret || '')
-                .onChange(async (value) => {
-                    await this.plugin.settingsManager.updateSettings({
-                        wechatAppSecret: value,
-                    });
-                }));
+        // ── 其他 ──────────────────────────────────
 
-        // 调试模式
         new Setting(containerEl)
             .setName('调试模式')
-            .setDesc('启用后将显示详细的调试日志信息')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settingsManager.getSettings().debugMode)
                 .onChange(async (value) => {
@@ -85,20 +97,112 @@ export class MPSettingTab extends PluginSettingTab {
                     });
                     this.plugin.logger.setDebugMode(value);
                 }));
+    }
 
-        // 数学公式配置
-        containerEl.createEl('h3', { text: '数学公式配置' });
+    private renderAccountCard(containerEl: HTMLElement, account: WechatAccount): void {
+        const settings = this.plugin.settingsManager.getSettings();
+        const isActive = settings.activeWechatAccountId === account.id;
 
-        // 转换数学公式为 SVG
-        new Setting(containerEl)
-            .setName('转换数学公式为 SVG')
-            .setDesc('启用后将把 LaTeX 数学公式转换为 SVG 格式，确保在微信公众号中正确显示。支持 $...$（行内公式）和 $$...$$（块级公式）语法')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settingsManager.getSettings().convertMathToSVG)
+        const card = containerEl.createDiv({ cls: 'mp-account-card' });
+        if (isActive) {
+            card.addClass('is-active');
+        }
+
+        // 卡片头部：名称 + 状态标签 + 操作按钮
+        const header = card.createDiv({ cls: 'mp-account-card-header' });
+
+        const titleRow = header.createDiv({ cls: 'mp-account-card-title-row' });
+        const nameInput = titleRow.createEl('input', {
+            cls: 'mp-account-name-input',
+            attr: {
+                type: 'text',
+                placeholder: '公众号名称',
+                value: account.name,
+            },
+        });
+        nameInput.addEventListener('change', async () => {
+            account.name = nameInput.value;
+            await this.plugin.settingsManager.updateSettings({
+                wechatAccounts: settings.wechatAccounts,
+            });
+        });
+
+        if (isActive) {
+            titleRow.createEl('span', { text: '默认', cls: 'mp-account-badge' });
+        }
+
+        const actions = header.createDiv({ cls: 'mp-account-card-actions' });
+        if (!isActive) {
+            const setDefaultBtn = actions.createEl('button', {
+                text: '设为默认',
+                cls: 'mp-account-action-btn',
+            });
+            setDefaultBtn.addEventListener('click', async () => {
+                await this.plugin.settingsManager.updateSettings({
+                    activeWechatAccountId: account.id,
+                    wechatAppId: account.appId,
+                    wechatAppSecret: account.appSecret,
+                });
+                this.display();
+            });
+        }
+        const deleteBtn = actions.createEl('button', {
+            text: '删除',
+            cls: 'mp-account-action-btn mp-account-action-btn--danger',
+        });
+        deleteBtn.addEventListener('click', async () => {
+            const updatedAccounts = settings.wechatAccounts.filter(a => a.id !== account.id);
+            const updates: Partial<typeof settings> = {
+                wechatAccounts: updatedAccounts,
+            };
+            if (isActive && updatedAccounts.length > 0) {
+                updates.activeWechatAccountId = updatedAccounts[0].id;
+                updates.wechatAppId = updatedAccounts[0].appId;
+                updates.wechatAppSecret = updatedAccounts[0].appSecret;
+            } else if (updatedAccounts.length === 0) {
+                updates.activeWechatAccountId = '';
+                updates.wechatAppId = '';
+                updates.wechatAppSecret = '';
+            }
+            await this.plugin.settingsManager.updateSettings(updates);
+            this.display();
+        });
+
+        // 卡片内容：AppID + AppSecret
+        const body = card.createDiv({ cls: 'mp-account-card-body' });
+
+        new Setting(body)
+            .setName('AppID')
+            .addText(text => text
+                .setPlaceholder('wx...')
+                .setValue(account.appId)
                 .onChange(async (value) => {
-                    await this.plugin.settingsManager.updateSettings({
-                        convertMathToSVG: value,
-                    });
+                    const trimmed = value.trim();
+                    account.appId = trimmed;
+                    const updates: Partial<typeof settings> = {
+                        wechatAccounts: settings.wechatAccounts,
+                    };
+                    if (isActive) {
+                        updates.wechatAppId = trimmed;
+                    }
+                    await this.plugin.settingsManager.updateSettings(updates);
+                }));
+
+        new Setting(body)
+            .setName('AppSecret')
+            .addText(text => text
+                .setPlaceholder('输入 AppSecret')
+                .setValue(account.appSecret)
+                .onChange(async (value) => {
+                    const trimmed = value.trim();
+                    account.appSecret = trimmed;
+                    const updates: Partial<typeof settings> = {
+                        wechatAccounts: settings.wechatAccounts,
+                    };
+                    if (isActive) {
+                        updates.wechatAppSecret = trimmed;
+                    }
+                    await this.plugin.settingsManager.updateSettings(updates);
                 }));
     }
 
