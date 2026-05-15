@@ -1,7 +1,9 @@
-import { ItemView, WorkspaceLeaf, MarkdownRenderer, Component } from 'obsidian';
+import { ItemView, WorkspaceLeaf, MarkdownRenderer, Component, requestUrl } from 'obsidian';
 
 export const VIEW_TYPE_GUIDE = 'mp-guide';
 export const VIEW_TYPE_CHANGELOG = 'mp-changelog';
+
+const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/joeytoday/obsidian-mp-publisher/main';
 
 interface DocViewConfig {
     viewType: string;
@@ -53,13 +55,26 @@ export class MarkdownDocView extends ItemView {
         container.addClass('mp-guide-view');
 
         try {
-            const filePath = this.pluginDir + '/' + this.config.fileName;
-            const content = await this.app.vault.adapter.read(filePath);
+            const content = await this.loadContent();
             const renderComponent = new Component();
             renderComponent.load();
             await MarkdownRenderer.render(this.app, content, container as HTMLElement, '', renderComponent);
         } catch {
             container.createEl('p', { text: '无法加载文件', cls: 'mp-guide-error' });
         }
+    }
+
+    private async loadContent(): Promise<string> {
+        // 优先从本地插件目录读取
+        try {
+            const filePath = this.pluginDir + '/' + this.config.fileName;
+            return await this.app.vault.adapter.read(filePath);
+        } catch {
+            // 本地不存在时从 GitHub 远程加载
+        }
+
+        const remoteUrl = `${GITHUB_RAW_BASE}/${this.config.fileName}`;
+        const response = await requestUrl({ url: remoteUrl });
+        return response.text;
     }
 }

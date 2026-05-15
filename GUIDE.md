@@ -33,7 +33,7 @@
 1. 在主题管理界面底部新建主题，直接写 CSS
 2. 把 `.css` 文件放到插件目录的 `custom/` 文件夹下，重启后自动加载
 
-编写自定义主题前建议先看 [CSS 主题编写指南](./CSS_THEME_GUIDE.md)。
+编写自定义主题前建议先看 [CSS 主题编写指南](https://github.com/joeytoday/obsidian-mp-publisher/blob/main/CSS_THEME_GUIDE.md)。
 
 ### 直接发布
 
