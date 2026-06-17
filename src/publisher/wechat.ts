@@ -342,17 +342,18 @@ export class WechatPublisher {
 
     /**
      * 统一处理所有列表相关逻辑
-     * 列表已在 converter.ts 中转换为 section + p 结构
-     * 这里只处理 mp-list-section 的样式调整
+     * 列表已在 converter.ts 中转换为 section + p 结构，缩进已在 mp-list-section 上设置
+     * 只处理 mp-list-item 内部的 p 标签内联化，与复制流程 CopyManager.processLists 保持一致
+     * 不强制覆盖 padding-left，converter 已根据层级正确设置缩进
      */
     private processLists(container: HTMLElement): void {
-        // 处理已转换的列表项样式
         container.querySelectorAll('.mp-list-item').forEach(item => {
             const el = item as HTMLElement;
-            // 确保样式正确
-            if (!el.style.paddingLeft) {
-                el.style.paddingLeft = '2em';
-            }
+            el.querySelectorAll('p').forEach(pEl => {
+                (pEl as HTMLElement).style.display = 'inline';
+                (pEl as HTMLElement).style.margin = '0';
+                (pEl as HTMLElement).style.padding = '0';
+            });
         });
     }
 
