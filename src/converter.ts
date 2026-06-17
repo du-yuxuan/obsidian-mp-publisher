@@ -250,7 +250,7 @@ export class MPConverter {
             const newCallout = document.createElement('section');
             newCallout.className = `mp-callout mp-callout-${calloutType}`;
             newCallout.setAttribute('data-callout', calloutType);
-            newCallout.style.cssText = `background: ${colors.bg}; border-left: 4px solid ${colors.border}; border-radius: 6px; padding: 12px 16px; margin: 1em 0; box-sizing: border-box;`;
+            newCallout.style.cssText = `background: ${colors.bg}; border-radius: 6px; padding: 12px 16px; margin: 1em 0; box-sizing: border-box;`;
 
             // 标题行
             const titleRow = document.createElement('section');
