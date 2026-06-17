@@ -361,13 +361,28 @@ export class WechatPublisher {
      * 将代码块中的换行符转为 <br> 标签
      * 微信公众号 API 会吃掉 <code> 中的 \n 换行符，导致代码不换行
      * 复制到剪贴板时浏览器会保留换行，所以此处理仅用于发布流程
+     *
+     * 同时将 <pre> 外的 <code>（行内代码）转为 <span>，
+     * 避免微信 API 将行内代码渲染为独立的代码块
      */
     private convertCodeBlockNewlines(html: string): string {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
 
+        // 将 <pre> 外的 <code>（行内代码）转为 <span> + 内联样式
+        // 微信 API 会把所有 <code> 标签当成代码块渲染
+        tempDiv.querySelectorAll('code').forEach(codeEl => {
+            if (codeEl.closest('pre')) return;
+
+            const span = document.createElement('span');
+            const existingStyle = (codeEl as HTMLElement).getAttribute('style') || '';
+            span.setAttribute('style', existingStyle);
+            span.innerHTML = codeEl.innerHTML;
+            codeEl.parentNode?.replaceChild(span, codeEl);
+        });
+
+        // 处理代码块中的换行符
         tempDiv.querySelectorAll('pre code').forEach(codeEl => {
-            // 递归遍历所有文本节点，将 \n 替换为 <br>
             const walker = document.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
             const textNodes: Text[] = [];
             let node: Text | null;
