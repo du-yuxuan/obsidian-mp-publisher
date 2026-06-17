@@ -440,7 +440,48 @@ export class WechatPublisher {
                 return uploadResult ? uploadResult.url : null;
             }
 
-            // 2. 处理网络图片 (http/https)
+            // 2. 处理本地图片 (app:// 协议，Obsidian 内部资源路径)
+            // 和复制流程保持一致：优先用 fetch 读取，Electron 环境原生支持 app:// 协议
+            if (imagePath.startsWith('app://')) {
+                let fileName = imagePath.split('/').pop();
+                if (!fileName) return null;
+                if (fileName.includes('?')) {
+                    fileName = fileName.split('?')[0];
+                }
+
+                // 检查缓存
+                let imageMetadata = isImageUploaded(metadata, fileName);
+
+                if (!imageMetadata) {
+                    this.logger.debug(`fetch 本地图片: ${imagePath}`);
+                    try {
+                        // eslint-disable-next-line no-restricted-globals
+                        const response = await fetch(imagePath);
+                        if (!response.ok) {
+                            this.logger.error(`fetch 本地图片失败: ${imagePath}, status: ${response.status}`);
+                            return null;
+                        }
+                        const arrayBuffer = await response.arrayBuffer();
+                        const uploadResult = await this.uploadImageAndGetUrl(arrayBuffer, fileName, accountId);
+                        if (!uploadResult) return null;
+
+                        imageMetadata = {
+                            fileName,
+                            url: uploadResult.url,
+                            media_id: uploadResult.media_id,
+                            uploadTime: Date.now()
+                        };
+                        addImageMetadata(metadata, fileName, imageMetadata);
+                        await updateMetadata(this.plugin, file, metadata);
+                    } catch (e) {
+                        this.logger.error(`fetch 本地图片异常: ${imagePath}`, e);
+                        return null;
+                    }
+                }
+                return imageMetadata.url;
+            }
+
+            // 3. 处理网络图片 (http/https)
             if (imagePath.startsWith('http')) {
                 // 检查缓存
                 let imageMetadata = isImageUploaded(metadata, imagePath);
