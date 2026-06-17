@@ -342,17 +342,18 @@ export class WechatPublisher {
 
     /**
      * 统一处理所有列表相关逻辑
-     * 列表已在 converter.ts 中转换为 section + p 结构
-     * 这里只处理 mp-list-section 的样式调整
+     * 列表已在 converter.ts 中转换为 section + p 结构，缩进已在 mp-list-section 上设置
+     * 只处理 mp-list-item 内部的 p 标签内联化，与复制流程 CopyManager.processLists 保持一致
+     * 不强制覆盖 padding-left，converter 已根据层级正确设置缩进
      */
     private processLists(container: HTMLElement): void {
-        // 处理已转换的列表项样式
         container.querySelectorAll('.mp-list-item').forEach(item => {
             const el = item as HTMLElement;
-            // 确保样式正确
-            if (!el.style.paddingLeft) {
-                el.style.paddingLeft = '2em';
-            }
+            el.querySelectorAll('p').forEach(pEl => {
+                (pEl as HTMLElement).style.display = 'inline';
+                (pEl as HTMLElement).style.margin = '0';
+                (pEl as HTMLElement).style.padding = '0';
+            });
         });
     }
 
@@ -360,13 +361,28 @@ export class WechatPublisher {
      * 将代码块中的换行符转为 <br> 标签
      * 微信公众号 API 会吃掉 <code> 中的 \n 换行符，导致代码不换行
      * 复制到剪贴板时浏览器会保留换行，所以此处理仅用于发布流程
+     *
+     * 同时将 <pre> 外的 <code>（行内代码）转为 <span>，
+     * 避免微信 API 将行内代码渲染为独立的代码块
      */
     private convertCodeBlockNewlines(html: string): string {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
 
+        // 将 <pre> 外的 <code>（行内代码）转为 <span> + 内联样式
+        // 微信 API 会把所有 <code> 标签当成代码块渲染
+        tempDiv.querySelectorAll('code').forEach(codeEl => {
+            if (codeEl.closest('pre')) return;
+
+            const span = document.createElement('span');
+            const existingStyle = (codeEl as HTMLElement).getAttribute('style') || '';
+            span.setAttribute('style', existingStyle);
+            span.innerHTML = codeEl.innerHTML;
+            codeEl.parentNode?.replaceChild(span, codeEl);
+        });
+
+        // 处理代码块中的换行符
         tempDiv.querySelectorAll('pre code').forEach(codeEl => {
-            // 递归遍历所有文本节点，将 \n 替换为 <br>
             const walker = document.createTreeWalker(codeEl, NodeFilter.SHOW_TEXT);
             const textNodes: Text[] = [];
             let node: Text | null;
@@ -424,7 +440,48 @@ export class WechatPublisher {
                 return uploadResult ? uploadResult.url : null;
             }
 
-            // 2. 处理网络图片 (http/https)
+            // 2. 处理本地图片 (app:// 协议，Obsidian 内部资源路径)
+            // 和复制流程保持一致：优先用 fetch 读取，Electron 环境原生支持 app:// 协议
+            if (imagePath.startsWith('app://')) {
+                let fileName = imagePath.split('/').pop();
+                if (!fileName) return null;
+                if (fileName.includes('?')) {
+                    fileName = fileName.split('?')[0];
+                }
+
+                // 检查缓存
+                let imageMetadata = isImageUploaded(metadata, fileName);
+
+                if (!imageMetadata) {
+                    this.logger.debug(`fetch 本地图片: ${imagePath}`);
+                    try {
+                        // eslint-disable-next-line no-restricted-globals
+                        const response = await fetch(imagePath);
+                        if (!response.ok) {
+                            this.logger.error(`fetch 本地图片失败: ${imagePath}, status: ${response.status}`);
+                            return null;
+                        }
+                        const arrayBuffer = await response.arrayBuffer();
+                        const uploadResult = await this.uploadImageAndGetUrl(arrayBuffer, fileName, accountId);
+                        if (!uploadResult) return null;
+
+                        imageMetadata = {
+                            fileName,
+                            url: uploadResult.url,
+                            media_id: uploadResult.media_id,
+                            uploadTime: Date.now()
+                        };
+                        addImageMetadata(metadata, fileName, imageMetadata);
+                        await updateMetadata(this.plugin, file, metadata);
+                    } catch (e) {
+                        this.logger.error(`fetch 本地图片异常: ${imagePath}`, e);
+                        return null;
+                    }
+                }
+                return imageMetadata.url;
+            }
+
+            // 3. 处理网络图片 (http/https)
             if (imagePath.startsWith('http')) {
                 // 检查缓存
                 let imageMetadata = isImageUploaded(metadata, imagePath);

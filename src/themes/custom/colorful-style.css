@@ -79,15 +79,16 @@
   color: #333;
 }
 
-/* ========== 引用：蓝色左边框 + 浅灰蓝背景 ========== */
+/* ========== 引用 ========== */
 .mp-content-section blockquote {
-  border-left: 4px solid #3478f6;
-  padding: 14px 20px;
-  background: #f0f4f8;
-  margin: 1em 0;
-  color: #333;
+  border: none !important;
+  border-left: none !important;
+  padding: 18px 24px;
+  background: #F4F4F4;
+  margin: 1.5em 0;
+  color: #acacac;
   font-style: normal;
-  border-radius: 0 8px 8px 0;
+  border-radius: 8px;
 }
 
 .mp-content-section blockquote p {
