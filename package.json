@@ -1,13 +1,14 @@
 {
   "name": "mp-publisher",
-  "version": "2.7.3",
+  "version": "2.7.7",
   "description": "公众号发布插件，支持自定义样式预览和一键发布到微信公众号",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy": "npm run build && rm -rf \"$HOME/Library/Mobile Documents/com~apple~CloudDocs/Obsidian/Duyuxuan/.obsidian/plugins/mp-publisher\" && mkdir -p \"$HOME/Library/Mobile Documents/com~apple~CloudDocs/Obsidian/Duyuxuan/.obsidian/plugins/mp-publisher\" && cp main.js manifest.json styles.css \"$HOME/Library/Mobile Documents/com~apple~CloudDocs/Obsidian/Duyuxuan/.obsidian/plugins/mp-publisher/\" && echo '✓ Deployed to vault'"
   },
   "keywords": [
     "obsidian",

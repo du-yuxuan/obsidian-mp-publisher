@@ -21,6 +21,7 @@ export default class MPPublisherPlugin extends Plugin {
   showPublishModal = showPublishModal;
 
   // 为了兼容性，添加 settings getter
+  // @ts-ignore - Overrides Plugin.settings (unknown) with typed MPSettings
   get settings() {
     return this.settingsManager.getSettings();
   }

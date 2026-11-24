@@ -114,7 +114,25 @@ export class WechatPublisher {
             if (mediaId) {
                 // 获取现有的上传图片缓存
                 const uploadedImagesCache = this.app.loadLocalStorage('wechat_uploaded_images_cache');
-                const uploadedImages: Record<string, { url: string; name: string; uploadTime: number }> = uploadedImagesCache ? JSON.parse(uploadedImagesCache) as Record<string, { url: string; name: string; uploadTime: number }> : {};
+                let uploadedImages: Record<string, { url: string; name: string; uploadTime: number }> = {};
+                if (uploadedImagesCache) {
+                    try {
+                        const parsed: unknown = JSON.parse(uploadedImagesCache);
+                        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                            const obj = parsed as Record<string, unknown>;
+                            const validated: Record<string, { url: string; name: string; uploadTime: number }> = {};
+                            for (const [key, val] of Object.entries(obj)) {
+                                if (val && typeof val === 'object' && !Array.isArray(val)) {
+                                    const v = val as Record<string, unknown>;
+                                    if (typeof v.url === 'string' && typeof v.name === 'string' && typeof v.uploadTime === 'number') {
+                                        validated[key] = { url: v.url, name: v.name, uploadTime: v.uploadTime };
+                                    }
+                                }
+                            }
+                            uploadedImages = validated;
+                        }
+                    } catch { /* ignore parse error */ }
+                }
 
                 // 添加新上传的图片
                 uploadedImages[mediaId] = {
@@ -158,7 +176,16 @@ export class WechatPublisher {
         if (!forceRefresh) {
             try {
                 const cacheData = this.app.loadLocalStorage(cacheKey);
-                const cache: TokenCache | null = cacheData ? JSON.parse(cacheData) as TokenCache : null;
+                let cache: TokenCache | null = null;
+                if (cacheData) {
+                    const parsed: unknown = JSON.parse(cacheData);
+                    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                        const p = parsed as Record<string, unknown>;
+                        if (typeof p.token === 'string' && typeof p.expireTime === 'number') {
+                            cache = { token: p.token, expireTime: p.expireTime };
+                        }
+                    }
+                }
 
                 // 如果缓存存在且未过期（有效期为110分钟，微信令牌有效期为2小时）
                 if (cache && Date.now() < cache.expireTime) {
